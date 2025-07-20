@@ -11,9 +11,9 @@ export default function Map() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Interactive Property Map</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">Mumbai Property Map</h1>
           <p className="text-lg text-muted-foreground">
-            Explore reported properties across the city. Click markers for details and status updates.
+            Explore reported vacant properties across Mumbai. Zoom in to see detailed property information including AI detection scores, electricity usage, and citizen reports.
           </p>
         </div>
         
@@ -22,7 +22,7 @@ export default function Map() {
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <MapComponent properties={properties} />
+          <MapComponent />
         )}
       </div>
     </div>

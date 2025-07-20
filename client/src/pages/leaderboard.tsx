@@ -23,8 +23,8 @@ export default function Leaderboard() {
   const updatedUsers: User[] = [
     {
       id: 1,
-      username: "sarah_martinez",
-      email: "sarah.martinez@example.com",
+      username: "rahul_deshmukh",
+      email: "rahul.deshmukh@example.com",
       password: "",
       points: 2156,
       rank: 1,
@@ -33,8 +33,8 @@ export default function Leaderboard() {
     },
     {
       id: 2,
-      username: "emily_chen",
-      email: "emily.chen@example.com",
+      username: "amit_mehra",
+      email: "amit.mehra@example.com",
       password: "",
       points: 1923,
       rank: 2,
@@ -43,19 +43,18 @@ export default function Leaderboard() {
     },
     {
       id: 3,
-      username: "alex_morgan",
-      email: "alex.morgan@example.com",
+      username: "priya_sawant",
+      email: "priya.sawant@example.com",
       password: "",
       points: 847,
       rank: 3,
       badge: "Rising Star",
       createdAt: new Date(),
     },
-    // Add some additional users to fill out the leaderboard
     {
       id: 4,
-      username: "michael_brown",
-      email: "michael.brown@example.com",
+      username: "siddharth_patil",
+      email: "siddharth.patil@example.com",
       password: "",
       points: 756,
       rank: 4,
@@ -64,8 +63,8 @@ export default function Leaderboard() {
     },
     {
       id: 5,
-      username: "lisa_wang",
-      email: "lisa.wang@example.com",
+      username: "karan_malhotra",
+      email: "karan.malhotra@example.com",
       password: "",
       points: 689,
       rank: 5,
@@ -74,8 +73,8 @@ export default function Leaderboard() {
     },
     {
       id: 6,
-      username: "david_kim",
-      email: "david.kim@example.com",
+      username: "sneha_joshi",
+      email: "sneha.joshi@example.com",
       password: "",
       points: 612,
       rank: 6,

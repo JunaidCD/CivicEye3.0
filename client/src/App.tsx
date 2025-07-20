@@ -14,6 +14,9 @@ import Leaderboard from "@/pages/leaderboard";
 import TaxNotice from "@/pages/tax-notice";
 import TaxDetails from "@/pages/tax-details";
 import NotFound from "@/pages/not-found";
+import VerifyStatus from "@/pages/verify-status";
+import NotificationCenter from "./pages/notification-center";
+import Insights from "./pages/insights";
 
 function Router() {
   return (
@@ -25,6 +28,9 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/tax-notice" component={TaxNotice} />
       <Route path="/tax-details" component={TaxDetails} />
+      <Route path="/verify-status" component={VerifyStatus} />
+      <Route path="/insights" component={Insights} />
+      <Route path="/notification-center" component={NotificationCenter} />
       <Route component={NotFound} />
     </Switch>
   );

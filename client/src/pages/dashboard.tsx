@@ -10,6 +10,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Property } from "@shared/schema";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { TrendingUp, Users, DollarSign, Building } from "lucide-react";
+import { X, BadgeCheck } from "lucide-react";
+
+function formatINR(amount: number | string) {
+  const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^\d.]/g, '')) : amount;
+  if (isNaN(num)) return amount;
+  return `₹${num.toLocaleString('en-IN')}`;
+}
 
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,19 +28,142 @@ export default function Dashboard() {
     queryKey: ["/api/properties"],
   });
 
-  const filteredProperties = properties.filter((property: Property) => {
+  // Mumbai addresses for dummy/mock data
+  const mumbaiAddresses = [
+    "201 Marine Drive, Colaba, Mumbai",
+    "14 Linking Road, Bandra West, Mumbai",
+    "88 Sion Trombay Road, Chembur, Mumbai",
+    "501 Hiranandani Gardens, Powai, Mumbai",
+    "77 Palm Beach Road, Navi Mumbai",
+    "A-12, LBS Marg, Mulund West, Mumbai",
+    "3rd Floor, Oberoi Mall, Goregaon East, Mumbai",
+    "Plot 22, Sector 30A, Vashi, Navi Mumbai",
+    "B-101, Rustomjee Urbania, Thane West, Mumbai",
+    "Shop 5, Lokhandwala Market, Andheri West, Mumbai"
+  ];
+
+  // Helper to get a random Mumbai address
+  function getRandomMumbaiAddress(idx: number) {
+    return mumbaiAddresses[idx % mumbaiAddresses.length];
+  }
+
+  // Map properties to override address and estimatedTaxLoss
+  const mappedProperties = (properties as Property[]).map((property: Property, idx: number) => ({
+    ...property,
+    address: getRandomMumbaiAddress(idx),
+    estimatedTaxLoss: property.estimatedTaxLoss
+      ? (Math.round(parseFloat(property.estimatedTaxLoss) * 85)).toString() // Example conversion rate
+      : property.estimatedTaxLoss,
+  }));
+
+  const filteredProperties = mappedProperties.filter((property: Property) => {
     const matchesSearch = property.address.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || property.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const statusCounts = {
-    all: properties.length,
-    "Reported": properties.filter((p: Property) => p.status === "Reported").length,
-    "Investigating": properties.filter((p: Property) => p.status === "Investigating").length,
-    "Confirmed Vacant": properties.filter((p: Property) => p.status === "Confirmed Vacant").length,
-    "Penalty Issued": properties.filter((p: Property) => p.status === "Penalty Issued").length,
+    all: mappedProperties.length,
+    "Reported": mappedProperties.filter((p: Property) => p.status === "Reported").length,
+    "Investigating": mappedProperties.filter((p: Property) => p.status === "Investigating").length,
+    "Confirmed Vacant": mappedProperties.filter((p: Property) => p.status === "Confirmed Vacant").length,
+    "Penalty Issued": mappedProperties.filter((p: Property) => p.status === "Penalty Issued").length,
   };
+
+  // Dialog state
+  const [openDialogId, setOpenDialogId] = useState<number | null>(null);
+  const openDialog = (id: number) => setOpenDialogId(id);
+  const closeDialog = () => setOpenDialogId(null);
+
+  // Dialog content component
+  function PropertyDialog({ property }: { property: Property }) {
+    const statusColor =
+      property.status === "Confirmed Vacant"
+        ? "#ef4444"
+        : property.status === "Reported"
+        ? "#22c55e"
+        : property.status === "Investigating"
+        ? "#eab308"
+        : property.status === "Penalty Issued"
+        ? "#a21caf"
+        : "#3b82f6";
+    return (
+      <div
+        style={{
+          minWidth: 340,
+          maxWidth: 420,
+          borderRadius: 18,
+          boxShadow: "0 8px 32px 0 rgba(0,0,0,0.25)",
+          padding: 28,
+          background: "#23272f",
+          color: "#fff",
+          fontFamily: "inherit",
+          lineHeight: 1.7,
+          position: "relative",
+        }}
+      >
+        <button
+          onClick={closeDialog}
+          style={{
+            position: "absolute",
+            top: 18,
+            right: 18,
+            background: "transparent",
+            border: "none",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: 20,
+            zIndex: 2,
+          }}
+        >
+          ×
+        </button>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+          <span style={{ fontWeight: 700, fontSize: 20 }}>{property.address}</span>
+          <span
+            style={{
+              marginLeft: 12,
+              padding: "4px 16px",
+              borderRadius: 14,
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#fff",
+              background: statusColor,
+              display: "inline-block",
+            }}
+          >
+            {property.status}
+          </span>
+        </div>
+        <div style={{ fontSize: 15, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+            <TrendingUp size={16} color="#38bdf8" style={{ marginRight: 8 }} />
+            <span>
+              Vacancy Score: <span style={{ fontWeight: 600 }}>{property.vacancyScore}%</span>
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+            <Users size={16} color="#a3a3a3" style={{ marginRight: 8 }} />
+            <span>
+              Reports: <span style={{ fontWeight: 600 }}>{property.reportCount}</span>
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+            <BadgeCheck size={16} color="#facc15" style={{ marginRight: 8 }} />
+            <span>
+              Last Utility Reading: <span style={{ fontWeight: 600 }}>{property.lastUtilityReading ? property.lastUtilityReading.toString() : 'Never'}</span>
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+            <DollarSign size={16} color="#ef4444" style={{ marginRight: 8 }} />
+            <span>
+              Estimated Tax Loss: <span style={{ fontWeight: 600, color: '#ef4444' }}>{property.estimatedTaxLoss ? formatINR(property.estimatedTaxLoss) : 'N/A'}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -88,7 +219,7 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Properties</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{properties.length}</div>
+              <div className="text-2xl font-bold">{mappedProperties.length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -127,21 +258,21 @@ export default function Dashboard() {
               <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Property at 1247 Oak Street confirmed vacant</p>
+                  <p className="text-sm font-medium">Property at {getRandomMumbaiAddress(0)} confirmed vacant</p>
                   <p className="text-xs text-muted-foreground">Reported by Junaid • 2 hours ago</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">New report submitted for Maple Avenue</p>
+                  <p className="text-sm font-medium">New report submitted for {getRandomMumbaiAddress(1)}</p>
                   <p className="text-xs text-muted-foreground">Reported by Junaid • 5 hours ago</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                 <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Investigation started for Pine Street property</p>
+                  <p className="text-sm font-medium">Investigation started for {getRandomMumbaiAddress(2)}</p>
                   <p className="text-xs text-muted-foreground">Updated by City Inspector • 1 day ago</p>
                 </div>
               </div>
@@ -188,7 +319,7 @@ export default function Dashboard() {
                 <div className="text-sm text-muted-foreground">Total Transactions</div>
               </div>
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-green-600 mb-2">$45.2K</div>
+                <div className="text-2xl font-bold text-green-600 mb-2">{formatINR(4520000)}</div>
                 <div className="text-sm text-muted-foreground">Tax Penalties Collected</div>
               </div>
               <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
@@ -201,8 +332,8 @@ export default function Dashboard() {
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium">Tax Notice - 1247 Oak Street</p>
-                    <p className="text-xs text-muted-foreground">0x4a7b...9e2f • $2,500 penalty</p>
+                    <p className="text-sm font-medium">Tax Notice - {getRandomMumbaiAddress(3)}</p>
+                    <p className="text-xs text-muted-foreground">0x4a7b...9e2f • {formatINR(2500)} penalty</p>
                   </div>
                 </div>
                 <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Confirmed</Badge>
@@ -211,8 +342,8 @@ export default function Dashboard() {
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
                   <div>
-                    <p className="text-sm font-medium">Penalty Payment - Elm Avenue</p>
-                    <p className="text-xs text-muted-foreground">0x8c1d...3f4a • $1,800 penalty</p>
+                    <p className="text-sm font-medium">Penalty Payment - {getRandomMumbaiAddress(4)}</p>
+                    <p className="text-xs text-muted-foreground">0x8c1d...3f4a • {formatINR(1800)} penalty</p>
                   </div>
                 </div>
                 <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pending</Badge>
@@ -263,16 +394,30 @@ export default function Dashboard() {
               <PropertyCard 
                 key={property.id} 
                 property={property} 
-                onViewDetails={(prop) => {
-                  toast({
-                    title: "Property Details",
-                    description: `Viewing detailed information for ${prop.address}. Feature coming soon!`,
-                  });
-                }}
+                onViewDetails={(prop) => openDialog(prop.id)}
               />
             ))}
           </div>
         )}
+      {/* Dialog Overlay */}
+      {openDialogId && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <PropertyDialog property={filteredProperties.find(p => p.id === openDialogId)!} />
+        </div>
+      )}
       </div>
     </div>
   );

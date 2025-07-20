@@ -1,18 +1,238 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Minus, Navigation } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { Property } from "@shared/schema";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { X, Zap, Calendar, Users, MapPin } from "lucide-react";
+
+// Custom colored marker icons
+const redIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+const greenIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+const yellowIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png',
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const mumbaiProperties = [
+  {
+    id: 1,
+    address: "123 Marine Drive, Colaba, Mumbai",
+    lat: 19.0760,
+    lng: 72.8777,
+    propertyType: "Residential",
+    status: "Confirmed Vacant",
+    vacancyScore: 95,
+    reportCount: 12,
+    lastUtilityReading: "2024-01-15",
+    estimatedTaxLoss: "45000",
+    aiDetectionScore: 92,
+    lastElectricityUsage: "2024-01-10",
+    citizenReports: 8,
+    propertyValue: "₹2.5 Crore",
+    ownerContact: "+91 98765 43210"
+  },
+  {
+    id: 2,
+    address: "456 Bandra West, Mumbai",
+    lat: 19.0544,
+    lng: 72.8402,
+    propertyType: "Commercial",
+    status: "Investigating",
+    vacancyScore: 78,
+    reportCount: 5,
+    lastUtilityReading: "2024-02-01",
+    estimatedTaxLoss: "32000",
+    aiDetectionScore: 85,
+    lastElectricityUsage: "2024-01-28",
+    citizenReports: 3,
+    propertyValue: "₹1.8 Crore",
+    ownerContact: "+91 98765 43211"
+  },
+  {
+    id: 3,
+    address: "789 Andheri East, Mumbai",
+    lat: 19.1197,
+    lng: 72.8696,
+    propertyType: "Residential",
+    status: "Reported",
+    vacancyScore: 65,
+    reportCount: 3,
+    lastUtilityReading: "2024-02-05",
+    estimatedTaxLoss: "28000",
+    aiDetectionScore: 72,
+    lastElectricityUsage: "2024-02-01",
+    citizenReports: 2,
+    propertyValue: "₹1.5 Crore",
+    ownerContact: "+91 98765 43212"
+  },
+  {
+    id: 4,
+    address: "321 Vashi, Navi Mumbai",
+    lat: 19.0710,
+    lng: 72.9986,
+    propertyType: "Commercial",
+    status: "Confirmed Vacant",
+    vacancyScore: 88,
+    reportCount: 15,
+    lastUtilityReading: "2024-01-20",
+    estimatedTaxLoss: "55000",
+    aiDetectionScore: 89,
+    lastElectricityUsage: "2024-01-15",
+    citizenReports: 12,
+    propertyValue: "₹3.2 Crore",
+    ownerContact: "+91 98765 43213"
+  },
+  {
+    id: 5,
+    address: "567 Thane West, Thane",
+    lat: 19.2183,
+    lng: 72.9781,
+    propertyType: "Residential",
+    status: "Investigating",
+    vacancyScore: 82,
+    reportCount: 6,
+    lastUtilityReading: "2024-02-10",
+    estimatedTaxLoss: "42000",
+    aiDetectionScore: 87,
+    lastElectricityUsage: "2024-02-05",
+    citizenReports: 4,
+    propertyValue: "₹2.8 Crore",
+    ownerContact: "+91 98765 43214"
+  },
+  {
+    id: 6,
+    address: "890 Worli, Mumbai",
+    lat: 19.0176,
+    lng: 72.8169,
+    propertyType: "Residential",
+    status: "Reported",
+    vacancyScore: 71,
+    reportCount: 4,
+    lastUtilityReading: "2024-02-15",
+    estimatedTaxLoss: "25000",
+    aiDetectionScore: 76,
+    lastElectricityUsage: "2024-02-10",
+    citizenReports: 3,
+    propertyValue: "₹1.9 Crore",
+    ownerContact: "+91 98765 43215"
+  }
+];
+
+function getMarkerIcon(status: string) {
+  if (status === "Confirmed Vacant") return redIcon;
+  if (status === "Reported") return greenIcon;
+  if (status === "Investigating") return yellowIcon;
+  return greenIcon;
+}
+
+function PropertyPopup({ property }: { property: any }) {
+  const statusColor =
+    property.status === "Confirmed Vacant"
+      ? "#ef4444"
+      : property.status === "Reported"
+      ? "#22c55e"
+      : "#eab308";
+  return (
+    <div
+      style={{
+        minWidth: 260,
+        borderRadius: 16,
+        boxShadow: "0 4px 24px 0 rgba(0,0,0,0.18)",
+        padding: 20,
+        background: "#23272f",
+        color: "#fff",
+        fontFamily: "inherit",
+        lineHeight: 1.7,
+        position: "relative",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ fontWeight: 700, fontSize: 18 }}>{property.address}</span>
+        <span
+          style={{
+            marginLeft: 10,
+            padding: "3px 14px",
+            borderRadius: 12,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#fff",
+            background: statusColor,
+            display: "inline-block",
+          }}
+        >
+          {property.status}
+        </span>
+      </div>
+      <div style={{ fontSize: 15 }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+          <Zap size={16} color="#facc15" style={{ marginRight: 8 }} />
+          <span>
+            AI Detection Score: <span style={{ color: "#22c55e", fontWeight: 600 }}>{property.aiDetectionScore}%</span>
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+          <Calendar size={16} color="#60a5fa" style={{ marginRight: 8 }} />
+          <span>
+            Last Electricity: <span style={{ fontWeight: 600 }}>{property.lastElectricityUsage}</span>
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+          <Users size={16} color="#a78bfa" style={{ marginRight: 8 }} />
+          <span>
+            Citizen Reports: <span style={{ fontWeight: 600 }}>{property.citizenReports}</span>
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+          <MapPin size={16} color="#f87171" style={{ marginRight: 8 }} />
+          <span>
+            Property Value: <span style={{ fontWeight: 600 }}>{property.propertyValue}</span>
+          </span>
+        </div>
+        <div
+          style={{
+            marginTop: 10,
+            borderTop: "1px solid #374151",
+            paddingTop: 10,
+            fontSize: 15,
+          }}
+        >
+          <span>
+            Vacancy Score: <span style={{ color: "#ef4444", fontWeight: 600 }}>{property.vacancyScore}%</span>
+          </span>
+          <br />
+          <span>
+            Tax Loss: <span style={{ color: "#ef4444", fontWeight: 600 }}>₹{parseFloat(property.estimatedTaxLoss).toLocaleString()}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function MapComponent() {
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data: properties = [] } = useQuery<Property[]>({
-    queryKey: ["/api/properties"],
-  });
+  const properties = mumbaiProperties;
 
   const filteredProperties = statusFilter === "all" 
     ? properties 
@@ -23,21 +243,6 @@ export function MapComponent() {
     investigating: properties.filter(p => p.status === "Investigating").length,
     reported: properties.filter(p => p.status === "Reported").length,
     totalReports: properties.length,
-  };
-
-  const getMarkerColor = (status: string) => {
-    switch (status) {
-      case "Reported":
-        return "bg-secondary";
-      case "Investigating":
-        return "bg-yellow-500";
-      case "Confirmed Vacant":
-        return "bg-destructive";
-      case "Penalty Issued":
-        return "bg-purple-500";
-      default:
-        return "bg-gray-500";
-    }
   };
 
   const statusButtons = [
@@ -52,9 +257,9 @@ export function MapComponent() {
       {/* Map Controls */}
       <Card>
         <CardHeader>
-          <CardTitle>Property Map View</CardTitle>
+          <CardTitle>Mumbai Property Map View</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Interactive map showing reported vacant properties across the city
+            Interactive map showing reported vacant properties across Mumbai, Navi Mumbai, and Thane. Zoom in to see property markers with detailed information.
           </p>
         </CardHeader>
         <CardContent>
@@ -71,18 +276,17 @@ export function MapComponent() {
                 </Button>
               ))}
             </div>
-            
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-secondary rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-muted-foreground">Reported</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
                 <span className="text-sm text-muted-foreground">Investigating</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-destructive rounded-full"></div>
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <span className="text-sm text-muted-foreground">Vacant</span>
               </div>
             </div>
@@ -90,57 +294,32 @@ export function MapComponent() {
         </CardContent>
       </Card>
 
-      {/* Real Map Container */}
+      {/* Real Map Container - React Leaflet */}
       <Card>
         <CardContent className="p-0">
           <div className="h-96 lg:h-[500px] relative overflow-hidden">
-            {/* Real Map Interface - Using OpenStreetMap */}
-            <iframe
-              src="https://www.openstreetmap.org/export/embed.html?bbox=-74.0479%2C40.7000%2C-73.9441%2C40.7819&amp;layer=mapnik&amp;marker=40.7128%2C-74.0060"
-              className="w-full h-full border-0"
-              allowFullScreen
-              title="Property Map"
-            />
-            {/* Property markers overlay */}
-            {filteredProperties.map((property, index) => (
-              <div
-                key={property.id}
-                className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-auto"
-                style={{
-                  left: `${20 + (index * 15) % 60}%`,
-                  top: `${25 + (index * 20) % 50}%`,
-                }}
-                onClick={() => setSelectedProperty(property)}
-              >
-                <div className="relative group">
-                  <div className={`w-6 h-6 ${getMarkerColor(property.status)} rounded-full border-3 border-white shadow-xl hover:scale-125 transition-all duration-200 cursor-pointer`}>
-                    <div className="w-full h-full rounded-full bg-white/20 animate-ping"></div>
-                  </div>
-                  {selectedProperty?.id === property.id && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 min-w-56 border-2 border-primary/20 z-30">
-                      <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-2">{property.address}</h4>
-                      <div className="space-y-1 text-xs">
-                        <p className="text-gray-600 dark:text-gray-300">Status: <span className="font-medium">{property.status}</span></p>
-                        <p className="text-gray-600 dark:text-gray-300">Vacancy Score: <span className="font-medium">{property.vacancyScore}%</span></p>
-                        <p className="text-gray-600 dark:text-gray-300">
-                          Tax Loss: <span className="font-medium text-red-600">${property.estimatedTaxLoss ? parseFloat(property.estimatedTaxLoss).toLocaleString() : 'N/A'}</span>
-                        </p>
-                      </div>
-                      <Badge className={`${getMarkerColor(property.status)} text-white text-xs mt-2 w-full justify-center`}>
-                        {property.status}
-                      </Badge>
-                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">
-                        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white dark:border-t-gray-800"></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-            {/* Map Attribution */}
-            <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-1 rounded text-xs text-gray-600 dark:text-gray-300 shadow-lg z-20">
-              © OpenStreetMap Contributors | CivicEye Data Overlay
-            </div>
+            <MapContainer
+              center={[19.11, 72.91]}
+              zoom={14}
+              style={{ height: "100%", width: "100%" }}
+              scrollWheelZoom={true}
+            >
+              <TileLayer
+                attribution='&copy; OpenStreetMap contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {filteredProperties.map((property) => (
+                <Marker
+                  key={property.id}
+                  position={[property.lat, property.lng]}
+                  icon={getMarkerIcon(property.status)}
+                >
+                  <Popup>
+                    <PropertyPopup property={property} />
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
           </div>
         </CardContent>
       </Card>

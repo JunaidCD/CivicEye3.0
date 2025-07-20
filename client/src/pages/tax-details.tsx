@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useQuery } from "@tanstack/react-query";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -12,67 +11,231 @@ import {
   ExternalLink,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Info
 } from "lucide-react";
+import { useState } from "react";
+
+function formatINR(amount: number | string) {
+  // Accepts number or string, returns Indian formatted string with ₹
+  const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^\d.]/g, '')) : amount;
+  if (isNaN(num)) return amount;
+  return `₹${num.toLocaleString('en-IN')}`;
+}
 
 export default function TaxDetails() {
-  const { data: taxData = [], isLoading } = useQuery({
-    queryKey: ["/api/tax-notices"],
-  });
-
-  // Mock comprehensive tax data
+  // Mock comprehensive tax data (all INR)
   const taxStats = {
-    totalPenalties: "$127,450",
-    collected: "$89,320",
-    pending: "$38,130",
+    totalPenalties: 127450,
+    collected: 89320,
+    pending: 38130,
     collectionRate: 70.1,
     activeNotices: 23,
     paidNotices: 45,
     overdueNotices: 8
   };
 
+  // Dummy data for recent notices (Mumbai addresses)
   const recentNotices = [
     {
       id: 1,
-      property: "1247 Oak Street, District 5",
-      amount: "$8,450",
-      dueDate: "2024-02-15",
+      property: "201 Marine Drive, Colaba, Mumbai",
+      basePenalty: 7000,
+      interest: 900,
+      fees: 550,
+      totalDue: 8450,
+      dueDate: "2025-07-15",
       status: "Paid",
       transactionHash: "0x4a7b...9e2f",
-      penalties: ["Late Payment Fee: $150", "Interest: $300"],
-      daysOverdue: 0
+      legalOwnershipInfo: "Owner deceased — No mutation filed",
+      noticeSent: "2025-06-30",
+      reminder: "2025-07-10"
     },
     {
       id: 2,
-      property: "892 Commercial Ave, Downtown",
-      amount: "$23,680",
-      dueDate: "2024-02-20",
+      property: "14 Linking Road, Bandra West, Mumbai",
+      basePenalty: 20000,
+      interest: 1800,
+      fees: 1880,
+      totalDue: 23680,
+      dueDate: "2025-07-20",
       status: "Pending",
       transactionHash: "0x8c1d...3f4a",
-      penalties: ["Vacancy Penalty: $20,000", "Administrative Fee: $3,680"],
-      daysOverdue: 15
+      legalOwnershipInfo: "No legal heir found",
+      noticeSent: "2025-07-01",
+      reminder: "2025-07-15"
     },
     {
       id: 3,
-      property: "789 Industrial Way, West Side",
-      amount: "$45,200",
-      dueDate: "2024-01-30",
+      property: "88 Sion Trombay Road, Chembur, Mumbai",
+      basePenalty: 40000,
+      interest: 3200,
+      fees: 2000,
+      totalDue: 45200,
+      dueDate: "2025-06-30",
       status: "Overdue",
       transactionHash: null,
-      penalties: ["Chronic Vacancy: $40,000", "Legal Fees: $5,200"],
-      daysOverdue: 35
+      legalOwnershipInfo: "Forwarded to Municipality",
+      noticeSent: "2025-06-10"
     },
     {
       id: 4,
-      property: "321 Elm Avenue, Eastside",
-      amount: "$12,750",
-      dueDate: "2024-02-25",
+      property: "501 Hiranandani Gardens, Powai, Mumbai",
+      basePenalty: 10000,
+      interest: 1200,
+      fees: 1550,
+      totalDue: 12750,
+      dueDate: "2025-07-25",
       status: "Processing",
       transactionHash: "0x2e9a...7b1c",
-      penalties: ["Vacancy Assessment: $10,000", "Processing Fee: $2,750"],
-      daysOverdue: 5
+      noticeSent: "2025-07-05"
+    },
+    {
+      id: 5,
+      property: "77 Palm Beach Road, Navi Mumbai",
+      basePenalty: 15000,
+      interest: 1200,
+      fees: 1250,
+      totalDue: 17450,
+      dueDate: "2025-07-18",
+      status: "Paid",
+      transactionHash: "0x7f2c...1b9d",
+      legalOwnershipInfo: null,
+      noticeSent: "2025-07-01",
+      reminder: "2025-07-10"
     }
   ];
+
+  // Dialog state
+  const [openDialogId, setOpenDialogId] = useState<number | null>(null);
+  const openDialog = (id: number) => setOpenDialogId(id);
+  const closeDialog = () => setOpenDialogId(null);
+
+  // Dialog content component
+  function NoticeDialog({ notice }: { notice: typeof recentNotices[0] }) {
+    const statusColor =
+      notice.status === "Confirmed Vacant"
+        ? "#ef4444"
+        : notice.status === "Reported"
+        ? "#22c55e"
+        : notice.status === "Pending"
+        ? "#eab308"
+        : notice.status === "Paid"
+        ? "#22c55e"
+        : notice.status === "Overdue"
+        ? "#ef4444"
+        : "#3b82f6";
+    return (
+      <div
+        style={{
+          minWidth: 340,
+          maxWidth: 420,
+          borderRadius: 18,
+          boxShadow: "0 8px 32px 0 rgba(0,0,0,0.25)",
+          padding: 28,
+          background: "#23272f",
+          color: "#fff",
+          fontFamily: "inherit",
+          lineHeight: 1.7,
+          position: "relative",
+        }}
+      >
+        <button
+          onClick={closeDialog}
+          style={{
+            position: "absolute",
+            top: 18,
+            right: 18,
+            background: "transparent",
+            border: "none",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: 20,
+            zIndex: 2,
+          }}
+        >
+          ×
+        </button>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+          <span style={{ fontWeight: 700, fontSize: 20 }}>{notice.property}</span>
+          <span
+            style={{
+              marginLeft: 12,
+              padding: "4px 16px",
+              borderRadius: 14,
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#fff",
+              background: statusColor,
+              display: "inline-block",
+            }}
+          >
+            {notice.status}
+          </span>
+        </div>
+        <div style={{ fontSize: 15, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+            <Calendar size={16} color="#60a5fa" style={{ marginRight: 8 }} />
+            <span>
+              Due: <span style={{ fontWeight: 600 }}>{notice.dueDate}</span>
+            </span>
+          </div>
+          {notice.noticeSent && (
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+              <Calendar size={16} color="#60a5fa" style={{ marginRight: 8 }} />
+              <span>
+                Notice Sent: <span style={{ fontWeight: 600 }}>{notice.noticeSent}</span>
+              </span>
+            </div>
+          )}
+          {notice.reminder && (
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+              <Calendar size={16} color="#60a5fa" style={{ marginRight: 8 }} />
+              <span>
+                Reminder: <span style={{ fontWeight: 600 }}>{notice.reminder}</span>
+              </span>
+            </div>
+          )}
+          {notice.transactionHash && (
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+              <ExternalLink size={16} color="#a3a3a3" style={{ marginRight: 8 }} />
+              <span style={{ fontWeight: 600 }}>{notice.transactionHash}</span>
+            </div>
+          )}
+        </div>
+        <div style={{ fontSize: 15, marginBottom: 10 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Penalty Breakdown:</div>
+          <div style={{ marginLeft: 8 }}>
+            <div>Base Penalty: <span style={{ fontWeight: 500 }}>{formatINR(notice.basePenalty)}</span></div>
+            <div>Interest: <span style={{ fontWeight: 500 }}>{formatINR(notice.interest)}</span></div>
+            <div>Legal/Admin Fees: <span style={{ fontWeight: 500 }}>{formatINR(notice.fees)}</span></div>
+            <div style={{ fontWeight: 700, marginTop: 6 }}>Total Due: <span style={{ color: "#38bdf8" }}>{formatINR(notice.totalDue)}</span></div>
+          </div>
+        </div>
+        {notice.legalOwnershipInfo && (
+          <div
+            style={{
+              borderLeft: '4px solid #6366f1',
+              background: 'rgba(99,102,241,0.08)',
+              borderRadius: 8,
+              padding: '12px 16px',
+              marginTop: 18,
+              marginBottom: 8,
+              minHeight: 48,
+              display: 'flex',
+              alignItems: 'flex-start',
+            }}
+          >
+            <Info size={20} color="#6366f1" style={{ marginRight: 12, marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#6366f1', marginBottom: 2 }}>Legal Ownership Info</div>
+              <div style={{ fontSize: 16, color: '#6366f1', fontStyle: 'italic', fontWeight: 500 }}>{notice.legalOwnershipInfo}</div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -124,7 +287,7 @@ export default function TaxDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{taxStats.totalPenalties}</div>
+              <div className="text-2xl font-bold">{formatINR(taxStats.totalPenalties)}</div>
               <p className="text-xs text-muted-foreground">+12.3% from last month</p>
             </CardContent>
           </Card>
@@ -137,7 +300,7 @@ export default function TaxDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{taxStats.collected}</div>
+              <div className="text-2xl font-bold text-green-600">{formatINR(taxStats.collected)}</div>
               <div className="flex items-center mt-2">
                 <Progress value={taxStats.collectionRate} className="flex-1 mr-2" />
                 <span className="text-xs text-muted-foreground">{taxStats.collectionRate}%</span>
@@ -153,7 +316,7 @@ export default function TaxDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{taxStats.pending}</div>
+              <div className="text-2xl font-bold text-yellow-600">{formatINR(taxStats.pending)}</div>
               <p className="text-xs text-muted-foreground">{taxStats.activeNotices} active notices</p>
             </CardContent>
           </Card>
@@ -223,7 +386,6 @@ export default function TaxDetails() {
                         {notice.status}
                       </Badge>
                     </div>
-                    
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-sm">{notice.property}</h4>
                       <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
@@ -231,9 +393,16 @@ export default function TaxDetails() {
                           <Calendar className="w-3 h-3 mr-1" />
                           Due: {notice.dueDate}
                         </span>
-                        {notice.daysOverdue > 0 && (
-                          <span className="text-red-600">
-                            {notice.daysOverdue} days overdue
+                        {notice.noticeSent && (
+                          <span className="flex items-center">
+                            <Calendar className="w-3 h-3 mr-1" />
+                            Notice Sent: {notice.noticeSent}
+                          </span>
+                        )}
+                        {notice.reminder && (
+                          <span className="flex items-center">
+                            <Calendar className="w-3 h-3 mr-1" />
+                            Reminder: {notice.reminder}
                           </span>
                         )}
                         {notice.transactionHash && (
@@ -243,30 +412,48 @@ export default function TaxDetails() {
                           </span>
                         )}
                       </div>
-                      
                       <div className="mt-2">
-                        <div className="text-xs text-muted-foreground">Penalties:</div>
-                        {notice.penalties.map((penalty, idx) => (
-                          <div key={idx} className="text-xs text-muted-foreground ml-2">
-                            • {penalty}
+                        <div className="text-xs text-muted-foreground mb-1">Penalty Breakdown:</div>
+                        <div className="ml-2 text-xs">
+                          <div>Base Penalty: <span className="font-medium">{formatINR(notice.basePenalty)}</span></div>
+                          <div>Interest: <span className="font-medium">{formatINR(notice.interest)}</span></div>
+                          <div>Legal/Admin Fees: <span className="font-medium">{formatINR(notice.fees)}</span></div>
+                          <div className="font-bold mt-1">Total Due: <span className="text-primary">{formatINR(notice.totalDue)}</span></div>
+                        </div>
+                        {notice.legalOwnershipInfo && (
+                          <div
+                            className="mt-3 mb-1 flex items-start"
+                            style={{
+                              borderLeft: '4px solid #6366f1',
+                              background: 'rgba(99,102,241,0.08)',
+                              borderRadius: 8,
+                              padding: '10px 14px',
+                              marginTop: 14,
+                              marginBottom: 6,
+                              minHeight: 48
+                            }}
+                          >
+                            <Info size={18} color="#6366f1" style={{ marginRight: 10, marginTop: 2, flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: '#6366f1', marginBottom: 2 }}>Legal Ownership Info</div>
+                              <div style={{ fontSize: 15, color: '#6366f1', fontStyle: 'italic', fontWeight: 500 }}>{notice.legalOwnershipInfo}</div>
+                            </div>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
                   </div>
-                  
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
-                      <div className="text-lg font-bold">{notice.amount}</div>
+                      <div className="text-lg font-bold">{formatINR(notice.totalDue)}</div>
                       <div className="text-xs text-muted-foreground">Total Due</div>
                     </div>
-                    
                     <div className="flex space-x-2">
                       <Button size="sm" variant="outline">
                         <Download className="w-4 h-4 mr-1" />
                         PDF
                       </Button>
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => openDialog(notice.id)}>
                         View
                       </Button>
                     </div>
@@ -277,6 +464,26 @@ export default function TaxDetails() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog Overlay */}
+      {openDialogId && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <NoticeDialog notice={recentNotices.find(n => n.id === openDialogId)!} />
+        </div>
+      )}
     </div>
   );
 }

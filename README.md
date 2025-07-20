@@ -38,6 +38,10 @@ A modern civic-tech platform that empowers communities to identify, report, and 
 2. **Install dependencies**
    ```bash
    npm install
+   npm install react-leaflet@4.2.1 leaflet
+   npm install --save-dev @types/leaflet
+   npm install react-chartjs-2 chart.js  
+   npm install jspdf    
    npm install --save-dev cross-env
    ```
 

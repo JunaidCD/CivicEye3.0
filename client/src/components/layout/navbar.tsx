@@ -5,10 +5,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocation } from "wouter";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  const [pathname] = useLocation();
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
@@ -16,6 +18,9 @@ export function Navbar() {
     { name: "Map", href: "/map" },
     { name: "Tax Details", href: "/tax-details" },
     { name: "Leaderboard", href: "/leaderboard" },
+    { name: "Verify Status", href: "/verify-status" },
+    { name: "Insights", href: "/insights" },
+    { name: "Notification Center", href: "/notification-center" },
   ];
 
   return (

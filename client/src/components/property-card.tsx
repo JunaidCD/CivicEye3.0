@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Building, MapPin, TrendingUp, DollarSign } from "lucide-react";
 import { Property } from "@shared/schema";
 
+function formatINR(amount: number | string) {
+  const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^\d.]/g, '')) : amount;
+  if (isNaN(num)) return amount;
+  return `₹${num.toLocaleString('en-IN')}`;
+}
+
 interface PropertyCardProps {
   property: Property;
   onViewDetails?: (property: Property) => void;
@@ -91,7 +97,7 @@ export function PropertyCard({ property, onViewDetails }: PropertyCardProps) {
             <span className="text-muted-foreground">Estimated Tax Loss:</span>
             <span className="font-medium text-destructive flex items-center">
               <DollarSign className="w-3 h-3 mr-1" />
-              {property.estimatedTaxLoss ? `$${parseFloat(property.estimatedTaxLoss).toLocaleString()}` : 'N/A'}
+              {property.estimatedTaxLoss ? formatINR(property.estimatedTaxLoss) : 'N/A'}
             </span>
           </div>
         </div>

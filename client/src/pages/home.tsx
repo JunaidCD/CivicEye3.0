@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Users, DollarSign, Building } from "lucide-react";
+import { IndianRupee } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 
@@ -10,6 +11,25 @@ export default function Home() {
   const { data: stats } = useQuery({
     queryKey: ["/api/stats"],
   });
+
+  // Overwrite stats for landing page
+  const landingStats = [
+    {
+      icon: Building,
+      value: 16,
+      label: "Properties Reported"
+    },
+    {
+      icon: IndianRupee,
+      value: "₹84 crore",
+      label: "Tax Revenue Recovered"
+    },
+    {
+      icon: Users,
+      value: 56,
+      label: "Active Reporters"
+    },
+  ];
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -87,23 +107,7 @@ export default function Home() {
             variants={containerVariants}
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
-            {stats && [
-              { 
-                icon: Building, 
-                value: stats.propertiesReported, 
-                label: "Properties Reported" 
-              },
-              { 
-                icon: DollarSign, 
-                value: stats.taxRecovered, 
-                label: "Tax Revenue Recovered" 
-              },
-              { 
-                icon: Users, 
-                value: stats.activeReporters, 
-                label: "Active Reporters" 
-              },
-            ].map((stat, index) => (
+            {landingStats.map((stat, index) => (
               <motion.div key={index} variants={itemVariants}>
                 <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
                   <CardContent className="p-6 text-center">
